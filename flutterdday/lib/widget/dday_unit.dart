@@ -1,5 +1,7 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+
 import '../item.dart';
 
 class DDayUnit extends StatelessWidget {
@@ -9,25 +11,40 @@ class DDayUnit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    dynamic imageProvider;
+
+    if (item.imagePath == null) {
+      imageProvider = AssetImage("assets/images/DummyImage1.png");
+    } else {
+      imageProvider = FileImage(File(item.imagePath!));
+    }
+
     DateTime now = DateTime.now();
     Duration diff = item.date.difference(now);
-    int days = diff.inDays + 1;
+    int days = diff.inDays;
 
-    String dateString = 'D-$days';
-
-    DecorationImage? image;
-    if (item.imagePath != null) {
-      image = DecorationImage(
-          image: FileImage(File(item.imagePath!)), fit: BoxFit.cover);
+    String dateString;
+    if (days == 0) {
+      dateString = 'D-DAY';
+    } else if (days < 0) {
+      days = days.abs();
+      dateString = 'D+$days';
+    } else {
+      days++;
+      dateString = 'D-$days';
     }
 
     return Container(
         margin: EdgeInsets.fromLTRB(20, 10, 20, 10),
         width: double.infinity,
         decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Color(0x33D4D4D4)),
-            image: image),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Color(0x33D4D4D4)),
+          image: DecorationImage(
+            image: imageProvider,
+            fit: BoxFit.cover,
+          ),
+        ),
         child: AspectRatio(
             aspectRatio: 16 / 9,
             child: Container(
@@ -49,13 +66,13 @@ class DDayUnit extends StatelessWidget {
                           Text(
                             item.title,
                             style: TextStyle(
-                                color: Color(0xFFFFFFFF),
+                                color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold),
                           ),
                           Text(dateString,
                               style: TextStyle(
-                                  color: Color(0xFFFFFFFF),
+                                  color: Colors.white,
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold))
                         ])))));

@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'item.dart';
 
 class MakePage extends StatefulWidget {
@@ -11,8 +13,8 @@ class MakePage extends StatefulWidget {
 }
 
 class _MakePageState extends State<MakePage> {
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController dateController = TextEditingController();
+  final titleController = TextEditingController();
+  final dateController = TextEditingController();
   String? imagePath;
 
   void getGalleryImage() async {
@@ -20,8 +22,14 @@ class _MakePageState extends State<MakePage> {
         await ImagePicker().getImage(source: ImageSource.gallery);
     if (image == null) return;
 
+    Directory tempDir = await getApplicationDocumentsDirectory();
+    String path = tempDir.path;
+    String fileName = basename(image.path);
+
+    File localImage = await File(image.path).copy('$path/$fileName');
+
     setState(() {
-      imagePath = image.path;
+      imagePath = localImage.path;
     });
   }
 
@@ -29,36 +37,39 @@ class _MakePageState extends State<MakePage> {
     if (titleController.text.isEmpty) return;
     if (dateController.text.isEmpty) return;
 
-    DateTime date = DateFormat('yyyy-MM-dd').parse(dateController.text);
+    DateTime date;
+    try {
+      date = DateFormat('yyyy-MM-dd').parse(dateController.text);
+    } on FormatException {
+      return;
+    }
 
     Item result =
-        Item(title: titleController.text, date: date, imagePath: imagePath);
+        new Item(title: titleController.text, date: date, imagePath: imagePath);
     Navigator.pop(context, result);
   }
 
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: Color(0xFF27282D),
         appBar: AppBar(
           title: Text('생성하기'),
           backgroundColor: Color(0xFF1D1D1D),
-          actions: [
+          actions: <Widget>[
             TextButton(
-                child: Text("완료", style: TextStyle(fontSize: 17)),
-                onPressed: () {
-                  complete(context);
-                })
+              child: Text("완료", style: TextStyle(fontSize: 17)),
+              onPressed: () {
+                complete(context);
+              },
+            )
           ],
         ),
         body: SingleChildScrollView(
-            child: Column(
-          children: [
-            _customImageButton(context),
-            _customTextField('제목', titleController),
-            _customTextField('날짜', dateController)
-          ],
-        )));
+            child: Column(children: [
+          _customImageButton(context),
+          _customTextField('제목', titleController),
+          _customTextField('날짜', dateController)
+        ])));
   }
 
   Widget _customTextField(String text, TextEditingController controller) {
@@ -67,7 +78,7 @@ class _MakePageState extends State<MakePage> {
         child: TextField(
             controller: controller,
             style: TextStyle(
-              color: Color(0xFFFFFFFF),
+              color: Colors.white,
               fontSize: 24,
             ),
             decoration: InputDecoration(
@@ -77,7 +88,7 @@ class _MakePageState extends State<MakePage> {
                 borderSide: BorderSide(color: Color(0x33D4D4D4)),
               ),
               focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                borderSide: BorderSide(color: Colors.white),
               ),
             )));
   }
@@ -86,11 +97,8 @@ class _MakePageState extends State<MakePage> {
     Widget image = Icon(Icons.photo_album, color: Color(0xFF5A5B6A));
 
     if (imagePath != null) {
-      image = Image.file(
-        File(imagePath!),
-        fit: BoxFit.cover,
-        width: double.infinity,
-      );
+      image = Image.file(File(imagePath!),
+          fit: BoxFit.cover, width: double.infinity);
     }
 
     return Container(

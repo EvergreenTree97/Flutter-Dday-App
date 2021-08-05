@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'widget/dday_unit.dart';
-import 'make_page.dart';
 
 import 'item.dart';
+import 'make_page.dart';
+import 'sharedPref.dart';
+import 'widget/dday_unit.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -12,32 +13,47 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   List<Item> items = [];
 
-  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        title: '디데이',
-        home: Scaffold(
-            backgroundColor: Color(0xFF27282D),
-            appBar: AppBar(
-              title: Text('디데이'),
-              backgroundColor: Colors.black,
-              actions: <Widget>[
-                IconButton(
-                    icon: Icon(Icons.add),
-                    onPressed: () {
-                      Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => MakePage()))
-                          .then((newItem) {
-                        setState(() {
-                          items.add(newItem);
-                        });
-                      });
-                    })
-              ],
-            ),
-            body: ListView(
-                children: items.map((item) => DDayUnit(item: item)).toList())));
+    return Scaffold(
+        backgroundColor: Color(0xFF27282D),
+        appBar: AppBar(
+          title: Text('디데이'),
+          backgroundColor: Colors.black,
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.add),
+              onPressed: () async {
+                Item newItem = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MakePage()),
+                );
+                await save([...items, newItem]);
+                setState(() {});
+              },
+            )
+          ],
+        ),
+        body: FutureBuilder<List<Item>>(
+          future: readAll(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              items = snapshot.data!;
+              return items.isNotEmpty ? _mainWidget(context) : _emtpyWidget();
+            }
+            return CircularProgressIndicator();
+          },
+        ));
+  }
+
+  Widget _mainWidget(BuildContext context) {
+    return ListView(
+        children: items.map((item) => DDayUnit(item: item)).toList());
+  }
+
+  Widget _emtpyWidget() {
+    return Center(
+        child: Text('등록된 디데이가 없습니다.\n디데이를 추가해주세요!',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 20)));
   }
 }
